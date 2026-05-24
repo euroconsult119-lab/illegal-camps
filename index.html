@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة رصد المخيمات المخالفة - المشاعر المقدسة</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Cairo', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            dark: '#022c22', main: '#064e3b', light: '#047857',
+                            neon: '#10b981', glow: '#34d399', gold: '#D4AF37', goldLight: '#FBE8A6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { 
+            background-color: #011a14; 
+            color: #ffffff; 
+            overflow-x: hidden; 
+            min-height: 100vh; 
+            display: flex;
+            flex-direction: column;
+            position: relative; 
+        }
+        
+        #particles-js { position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: -2; }
+        
+        .glow-orb { position: fixed; border-radius: 50%; filter: blur(100px); z-index: -1; animation: float 10s infinite alternate ease-in-out; opacity: 0.4; }
+        .orb-1 { width: 400px; height: 400px; background: #064e3b; top: -10%; right: -10%; }
+        .orb-2 { width: 300px; height: 300px; background: #10b981; bottom: -10%; left: -10%; animation-delay: -5s; }
+        
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.2); } }
+
+        .glass-card {
+            background: rgba(6, 78, 59, 0.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(16, 185, 129, 0.2); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            position: relative; overflow: visible;
+        }
+        
+        .glass-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #10b981, #D4AF37, #10b981, transparent);
+            background-size: 200% auto; animation: shine 3s linear infinite; z-index: 10;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        /* الترتيب العكسي للـ z-index لضمان ظهور القوائم فوق الحقول التالية */
+        .step-1 { z-index: 60 !important; position: relative; }
+        .step-2 { z-index: 50 !important; position: relative; }
+
+        .custom-dropdown-container { position: relative; width: 100%; margin-bottom: 1.5rem; }
+        .custom-dropdown-selected {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+            backdrop-filter: blur(16px); border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 0.75rem; color: #fff; padding: 0.85rem 1.2rem; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;
+        }
+        .custom-dropdown-selected:hover, .custom-dropdown-selected.active { border-color: #D4AF37; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+        
+        .custom-dropdown-options {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: #022c22; border: 1px solid rgba(212, 175, 55, 0.5);
+            border-radius: 0.75rem; z-index: 200; max-height: 250px; overflow-y: auto;
+            opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .custom-dropdown-options.open { opacity: 1; visibility: visible; transform: translateY(0); }
+        .custom-dropdown-option { padding: 0.85rem 1.2rem; color: #e5e7eb; cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .custom-dropdown-option:hover { background: rgba(16, 185, 129, 0.3); color: #FBE8A6; border-right: 4px solid #D4AF37; }
+
+        .file-drop-area { border: 2px dashed rgba(16, 185, 129, 0.4); background: rgba(2, 44, 34, 0.2); transition: all 0.3s ease; cursor: pointer; }
+        .file-drop-area:hover { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+        .btn-neon {
+            background: linear-gradient(45deg, #047857, #10b981);
+            transition: all 0.3s ease; position: relative; z-index: 1; overflow: hidden;
+        }
+        .btn-neon:hover:not(:disabled) { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); transform: translateY(-2px); }
+
+        .loader { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .hidden-step { display: none; opacity: 0; transform: translateY(10px); transition: all 0.5s ease; }
+        .show-step { display: block; opacity: 1; transform: translateY(0); }
+        
+        .native-select { display: none; }
+
+        .header-title { line-height: 1.5 !important; padding: 0.3em 0; }
+
+        /* Video Backgrounds */
+        .video-background {
+            position: fixed;
+            bottom: 250px; 
+            left: 5px;
+            top: auto; 
+            width: 25vw; 
+            min-width: 450px; 
+            max-width: 550px;
+            height: auto;
+            z-index: -3;
+            opacity: 0.85;
+            mix-blend-mode: screen; 
+            filter: hue-rotate(-20deg) saturate(220%) brightness(115%);
+            pointer-events: none;
+            border-radius: 1rem;
+        }
+        .video-background2 {
+            position: fixed;
+            bottom: 250px; 
+            right: 5px;
+            top: auto; 
+            width: 25vw; 
+            min-width: 450px; 
+            max-width: 550px;
+            height: auto;
+            z-index: -3;
+            opacity: 0.85;
+            mix-blend-mode: screen; 
+            filter: hue-rotate(-20deg) saturate(220%) brightness(115%);
+            pointer-events: none;
+            border-radius: 1rem;
+        }
+
+        /* Image Preview Style with Delete Button */
+        .img-container {
+            position: relative;
+            width: 100%;
+            height: 5rem; /* md:h-20 */
+        }
+        @media (min-width: 768px) {
+            .img-container { height: 5rem; }
+        }
+        .delete-img-btn {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border: 1px solid white;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="particles-js"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <!-- Video Backgrounds -->
+    <video autoplay loop muted playsinline class="video-background">
+        <source src="GettyImages-1328574341.mp4" type="video/mp4">
+    </video>
+    <video autoplay loop muted playsinline class="video-background2">
+        <source src="GettyImages-1328574341.mp4" type="video/mp4">
+    </video>
+
+    <!-- Header -->
+    <header class="w-full px-4 md:px-6 py-4 flex justify-between items-center glass-card border-x-0 border-t-0 rounded-none mb-8 z-[100]">
+        <img src="https://haj.gov.sa/_next/image?url=https%3A%2F%2Fhaj.gov.sa%2Fs-core%2F-%2Fmedia%2FProject%2FHAJJ%2FHajj-Logos%2FFooter-Logo.svg%3Fiar%3D0%26hash%3DB264A0694E67A2E26811BCC3C7B24DD5&w=1920&q=75" alt="وزارة الحج" class="h-8 md:h-12 filter brightness-0 invert">
+        <img src="https://raw.githubusercontent.com/euroconsult119-lab/archive/main/logo.png" alt="يوروكونسلت" class="h-8 md:h-12 filter brightness-0 invert">
+    </header>
+
+    <main class="container mx-auto px-4 pb-12 flex-grow relative z-10">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-10">
+                <h1 class="header-title text-3xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-l from-brand-goldLight to-brand-neon">
+                 رصد المخيمات المخالفة في المشاعر المقدسة
+                </h1>
+                <p class="text-gray-300 text-base md:text-lg">بوابة التوثيق الميداني للمخالفات بالمشاعر المقدسة</p>
+            </div>
+
+            <form id="monitoringForm" class="glass-card rounded-2xl p-5 md:p-10 shadow-2xl space-y-4">
+                
+                <!-- 1. المجموعة -->
+                <div class="form-group step-1">
+                    <label class="block text-brand-neon font-semibold mb-2 text-lg"><i class="fa-solid fa-users text-brand-gold ml-2"></i>رقم المجموعة</label>
+                    <select id="groupNumber" class="native-select">
+                        <option value="" disabled selected>اختر المجموعة...</option>
+                        <option value="مجموعة 1">مجموعة 1</option>
+                        <option value="مجموعة 2">مجموعة 2</option>
+                        <option value="مجموعة 3">مجموعة 3</option>
+                        <option value="مجموعة 4">مجموعة 4</option>
+                    </select>
+                </div>
+
+                <!-- 2. الشاخص وتفاصيل المخالفة -->
+                <div id="stepDetails" class="hidden-step step-2 space-y-6 mt-6">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-brand-neon font-semibold mb-2"><i class="fa-solid fa-hashtag text-brand-gold ml-2"></i>رقم الشاخص المرصود</label>
+                            <input type="text" id="targetNumber" class="w-full bg-brand-dark/50 border border-brand-light/40 rounded-xl p-3 text-white font-semibold focus:border-brand-gold outline-none" placeholder="أدخل رقم الشاخص هنا...">
+                        </div>
+                        <div>
+                            <label class="block text-brand-neon font-semibold mb-2"><i class="fa-solid fa-pen-to-square text-brand-gold ml-2"></i>وصف المخالفة</label>
+                            <textarea id="violationDesc" rows="5" class="w-full bg-brand-dark/50 border border-brand-light/40 rounded-xl p-3 text-white focus:border-brand-gold outline-none" placeholder="اكتب تفاصيل المخالفة..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="file-drop-area rounded-2xl p-6 md:p-8 text-center" onclick="document.getElementById('fileInput').click()">
+                        <div class="w-14 h-14 md:w-16 md:h-16 bg-brand-main rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
+                            <i class="fa-solid fa-camera-retro text-2xl md:text-3xl text-brand-glow"></i>
+                        </div>
+                        <span class="text-white font-bold block mb-1" id="fileLabel">اضغط هنا لرفع صور المخالفة</span>
+                        <span class="text-gray-400 text-xs md:text-sm italic">سيتم حفظ الصور في مجلد الشاخص تلقائياً</span>
+                        <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+                    </div>
+                    <div id="previewGrid" class="grid grid-cols-3 md:grid-cols-4 gap-4"></div>
+
+                    <button type="submit" id="submitBtn" class="btn-neon w-full py-4 rounded-xl text-white font-bold text-lg md:text-xl shadow-lg flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-cloud-arrow-up text-brand-goldLight"></i>
+                        <span id="btnText">إرسال وتوثيق المخالفة</span>
+                        <div id="btnLoader" class="loader hidden"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="w-full text-center py-6 md:py-8 glass-card border-x-0 border-t border-b-0 rounded-none mt-auto relative z-0">
+        <p class="text-gray-300 text-xs md:text-sm mb-2 px-4 font-semibold">جميع الحقوق محفوظة لفريق الدعم الفني للأرشفة الإلكترونية م/عمرعادل</p>
+        <p class="text-brand-gold font-bold text-xs md:text-sm px-4 tracking-wide">شركة يوروكونسلت &copy; 2026</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // --------- تنبيه هام ---------
+        // ضع هنا الرابط الجديد الذي سيظهر لك بعد نشر كود Google Apps Script الجديد (Deploy as Web App)
+        const GOOGLE_SCRIPT_URL = "YOUR_NEW_GOOGLE_SCRIPT_URL_HERE"; 
+        // -----------------------------
+
+        function createCustomDropdown(selectId, onSelect) {
+            const select = document.getElementById(selectId);
+            const container = document.createElement('div');
+            container.className = 'custom-dropdown-container';
+            
+            const selected = document.createElement('div');
+            selected.className = 'custom-dropdown-selected';
+            const initialText = select.options.length > 0 ? select.options[select.selectedIndex].text : 'جاري التحميل...';
+            selected.innerHTML = `<span>${initialText}</span> <i class="fa-solid fa-chevron-down text-brand-gold text-xs"></i>`;
+            
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'custom-dropdown-options';
+            
+            function updateOptions() {
+                optionsDiv.innerHTML = '';
+                Array.from(select.options).forEach((opt, idx) => {
+                    if (idx === 0 && opt.disabled) return;
+                    const o = document.createElement('div');
+                    o.className = 'custom-dropdown-option';
+                    o.innerText = opt.text;
+                    o.onclick = (e) => {
+                        e.stopPropagation();
+                        select.value = opt.value;
+                        selected.querySelector('span').innerText = opt.text;
+                        selected.querySelector('span').classList.add('text-white', 'font-bold');
+                        optionsDiv.classList.remove('open');
+                        selected.classList.remove('active');
+                        if (onSelect) onSelect(opt.value);
+                    };
+                    optionsDiv.appendChild(o);
+                });
+                const currentText = select.options.length > 0 ? select.options[select.selectedIndex].text : 'اختر...';
+                selected.querySelector('span').innerText = currentText;
+            }
+
+            updateOptions();
+
+            selected.onclick = (e) => {
+                e.stopPropagation();
+                const isOpen = optionsDiv.classList.contains('open');
+                document.querySelectorAll('.custom-dropdown-options').forEach(d => d.classList.remove('open'));
+                document.querySelectorAll('.custom-dropdown-selected').forEach(s => s.classList.remove('active'));
+                
+                if (!isOpen) {
+                    optionsDiv.classList.add('open');
+                    selected.classList.add('active');
+                }
+            };
+
+            container.appendChild(selected);
+            container.appendChild(optionsDiv);
+            select.parentNode.insertBefore(container, select.nextSibling);
+
+            return { updateOptions };
+        }
+
+        // تفعيل القائمة وإظهار باقي الحقول عند اختيار المجموعة
+        const groupDrop = createCustomDropdown('groupNumber', (val) => {
+            document.getElementById('stepDetails').classList.add('show-step');
+        });
+
+        // مصفوفة لتخزين بيانات الصور بشكل تراكمي
+        let base64Images = [];
+
+        document.getElementById('fileInput').onchange = function(e) {
+            const grid = document.getElementById('previewGrid');
+            
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const imgId = 'img_' + Math.random().toString(36).substr(2, 9);
+                    const base64Data = ev.target.result.split(',')[1];
+                    
+                    // إضافة الصورة للمصفوفة
+                    base64Images.push({ 
+                        id: imgId,
+                        name: file.name, 
+                        mimeType: file.type, 
+                        data: base64Data 
+                    });
+                    
+                    // إنشاء حاوية الصورة مع زر الحذف
+                    const container = document.createElement('div');
+                    container.className = 'img-container';
+                    container.id = 'container_' + imgId;
+                    
+                    const img = document.createElement('img');
+                    img.src = ev.target.result;
+                    img.className = 'w-full h-full object-cover rounded-lg border border-brand-neon/30 shadow-md';
+                    
+                    const deleteBtn = document.createElement('div');
+                    deleteBtn.className = 'delete-img-btn';
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    deleteBtn.onclick = () => removeImage(imgId);
+                    
+                    container.appendChild(img);
+                    container.appendChild(deleteBtn);
+                    grid.appendChild(container);
+                    
+                    updateFileLabel();
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            this.value = '';
+        };
+
+        // دالة لحذف صورة معينة
+        function removeImage(id) {
+            base64Images = base64Images.filter(item => item.id !== id);
+            const container = document.getElementById('container_' + id);
+            if (container) container.remove();
+            updateFileLabel();
+        }
+
+        // دالة لتحديث نص العداد
+        function updateFileLabel() {
+            const label = document.getElementById('fileLabel');
+            if (base64Images.length > 0) {
+                label.innerText = `تم اختيار ${base64Images.length} صور (يمكنك إضافة أو حذف)`;
+            } else {
+                label.innerText = `اضغط هنا لرفع صور المخالفة`;
+            }
+        }
+
+        // إرسال البيانات
+        document.getElementById('monitoringForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('btnLoader');
+            
+            const targetNumber = document.getElementById('targetNumber').value.trim();
+            const violationDesc = document.getElementById('violationDesc').value.trim();
+
+            if (!targetNumber || !violationDesc || base64Images.length === 0) {
+                Swal.fire({ icon: 'warning', title: 'بيانات ناقصة', text: 'يرجى التأكد من كتابة الشاخص ووصف المخالفة وإرفاق صورة واحدة على الأقل', confirmButtonColor: '#D4AF37' });
+                return;
+            }
+            
+            if (GOOGLE_SCRIPT_URL === "YOUR_NEW_GOOGLE_SCRIPT_URL_HERE") {
+                Swal.fire({ icon: 'error', title: 'خطأ في الإعدادات', text: 'يرجى وضع رابط جوجل سكريبت الجديد في الكود أولاً.', confirmButtonColor: '#ef4444' });
+                return;
+            }
+
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+
+            const payload = {
+                groupNumber: document.getElementById('groupNumber').value,
+                targetNumber: targetNumber,
+                violationDesc: violationDesc,
+                images: base64Images.map(img => ({ name: img.name, mimeType: img.mimeType, data: img.data }))
+            };
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                Swal.fire({ icon: 'success', title: 'تم التوثيق بنجاح!', text: 'تم إنشاء مجلد الشاخص وأرشفة الصور وحفظ التقرير.', confirmButtonColor: '#10b981' }).then(() => location.reload());
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'حدثت مشكلة أثناء محاولة الإرسال للسيرفر.', confirmButtonColor: '#ef4444' });
+                btn.disabled = false;
+                loader.classList.add('hidden');
+            }
+        };
+
+        // إغلاق القوائم المنسدلة عند النقر في أي مكان آخر
+        document.onclick = () => {
+            document.querySelectorAll('.custom-dropdown-options').forEach(d => d.classList.remove('open'));
+            document.querySelectorAll('.custom-dropdown-selected').forEach(s => s.classList.remove('active'));
+        };
+
+        // تشغيل تأثيرات الجزيئات (Particles)
+        particlesJS('particles-js', {
+            "particles": {
+                "number": { "value": 40, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#10b981" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.25 },
+                "size": { "value": 3 },
+                "line_linked": { "enable": true, "distance": 150, "color": "#10b981", "opacity": 0.15, "width": 1 },
+                "move": { "enable": true, "speed": 1.2 }
+            }
+        });
+    </script>
+</body>
+</html>
